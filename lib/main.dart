@@ -164,13 +164,18 @@ class _HomeState extends State<Home> {
                                       )
                                     ],
                                   ),
-                                  onTap: ()  {
-                                    Navigator.of(context).push(
+                                  onTap: () async {
+                                    bool? updated =
+                                        await Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (context) =>
                                             TaskDetailScreen(todo: varTodo),
                                       ),
                                     );
+                                   
+                                      setState(
+                                          () {}); // Force rebuild to update the list.
+                                    
                                   },
                                 );
                                 
@@ -225,6 +230,14 @@ class TaskDetailScreen extends StatefulWidget {
 }
 
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
+  late String _title;
+  late String _description;
+  @override
+  void initState() {
+    super.initState();
+    _title = widget.todo.get<String>('title')!;
+    _description = widget.todo.get<String>('description')!;
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -233,10 +246,19 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.edit),
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(
+            onPressed: () async {
+              bool? updated =
+                  await Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => EditTaskScreen(todo: widget.todo),
               ));
+
+              if (updated != null && updated) {
+                setState(() {
+                  _title = widget.todo.get<String>('title')!;
+                  _description = widget.todo.get<String>('description')!;
+                });
+              }
+
             },
           )
         ],
