@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk_flutter.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -26,18 +25,21 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final todoController = TextEditingController();
+  final todoControllerdescription = TextEditingController();
 
   void addToDo() async {
-    if (todoController.text.trim().isEmpty) {
+    if (todoController.text.trim().isEmpty ||
+        todoControllerdescription.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Empty title"),
         duration: Duration(seconds: 2),
       ));
       return;
     }
-    await saveTodo(todoController.text);
+    await saveTodo(todoController.text, todoControllerdescription.text);
     setState(() {
       todoController.clear();
+      todoControllerdescription.clear();
     });
   }
 
@@ -61,7 +63,17 @@ class _HomeState extends State<Home> {
                       textCapitalization: TextCapitalization.sentences,
                       controller: todoController,
                       decoration: InputDecoration(
-                          labelText: "New todo",
+                          labelText: "title",
+                          labelStyle: TextStyle(color: Colors.blueAccent)),
+                    ),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      autocorrect: true,
+                      textCapitalization: TextCapitalization.sentences,
+                      controller: todoControllerdescription,
+                      decoration: InputDecoration(
+                          labelText: "description",
                           labelStyle: TextStyle(color: Colors.blueAccent)),
                     ),
                   ),
@@ -106,11 +118,13 @@ class _HomeState extends State<Home> {
                                 //Get Parse Object Values
                                 final varTodo = snapshot.data![index];
                                 final varTitle = varTodo.get<String>('title')!;
+                                final varDescription = varTodo.get<String>('description')!;
                                 final varDone = varTodo.get<bool>('done')!;
                                 //*************************************
 
                                 return ListTile(
                                   title: Text(varTitle),
+                                  subtitle: Text(varDescription),
                                   leading: CircleAvatar(
                                     child: Icon(
                                         varDone ? Icons.check : Icons.error),
@@ -150,7 +164,16 @@ class _HomeState extends State<Home> {
                                       )
                                     ],
                                   ),
+                                  onTap: ()  {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            TaskDetailScreen(todo: varTodo),
+                                      ),
+                                    );
+                                  },
                                 );
+                                
                               });
                         }
                     }
@@ -160,15 +183,16 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Future<void> saveTodo(String title) async {
+  Future<void> saveTodo(String title, String description) async {
     final todo = ParseObject('Todo')
       ..set('title', title)
+      ..set('description',description)
       ..set('done', false);
     await todo.save();
   }
 
   Future<List<ParseObject>> getTodo() async {
-        QueryBuilder<ParseObject> queryTodo =
+    QueryBuilder<ParseObject> queryTodo =
         QueryBuilder<ParseObject>(ParseObject('Todo'));
     final ParseResponse apiResponse = await queryTodo.query();
 
@@ -180,10 +204,126 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> updateTodo(String id, bool done) async {
-    await Future.delayed(Duration(seconds: 1), () {});
+    final todo = ParseObject('Todo')..objectId = id;
+    todo.set('done', done);
+    await todo.save();
   }
 
   Future<void> deleteTodo(String id) async {
-    await Future.delayed(Duration(seconds: 1), () {});
+    final todo = ParseObject('Todo')..objectId = id;
+    await todo.delete();
   }
 }
+
+class TaskDetailScreen extends StatefulWidget {
+  final ParseObject todo;
+
+  TaskDetailScreen({required this.todo});
+
+  @override
+  _TaskDetailScreenState createState() => _TaskDetailScreenState();
+}
+
+class _TaskDetailScreenState extends State<TaskDetailScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Task Details'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: () {
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => EditTaskScreen(todo: widget.todo),
+              ));
+            },
+          )
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              widget.todo.get<String>('title')!,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            Text(widget.todo.get<String>('description')!),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EditTaskScreen extends StatefulWidget {
+  final ParseObject todo;
+
+  EditTaskScreen({required this.todo});
+
+  @override
+  _EditTaskScreenState createState() => _EditTaskScreenState();
+}
+
+class _EditTaskScreenState extends State<EditTaskScreen> {
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController.text = widget.todo.get<String>('title')!;
+    _descriptionController.text = widget.todo.get<String>('description')!;
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Edit Task'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.save),
+            onPressed: _saveTask,
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: <Widget>[
+            TextField(
+              controller: _titleController,
+              decoration: InputDecoration(labelText: 'Title'),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: _descriptionController,
+              decoration: InputDecoration(labelText: 'Description'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  _saveTask() async {
+    widget.todo.set<String>('title', _titleController.text);
+    widget.todo.set<String>('description', _descriptionController.text);
+    await widget.todo.save();
+
+    Navigator.of(context).pop(true); // close the edit screen
+    // Pop the TaskDetailScreen to go back to the main page
+  }
+}
+
