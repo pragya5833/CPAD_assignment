@@ -1,16 +1,20 @@
-# task_manager
+# task_manager Prerequisite:
 
-A new Flutter project.
+Install flutter
+Installed version and details:
+Flutter 3.13.9 • channel stable •
+Tools • Dart 3.1.5 • DevTools 2.25.0
+Clone the git repo:
+https://github.com/pragya5833/CPAD_assignment
+Run:
+flutter pub get # To get the dependencies listed in pubspec.yaml
+To run the project:
+flutter run
 
-## Getting Started
+# Brief overview of bonus features:
 
-This project is a starting point for a Flutter application.
+List task will also have options to edit existing task. To edit the task click on task to get its details then click on edit at top right corner then update values and click on save button at top right corner.
 
-A few resources to get you started if this is your first Flutter project:
+To delete the task go to main page with list of task and click on delete icon.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+To mark the task done click on checkbox.
